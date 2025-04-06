@@ -14,6 +14,14 @@ type Vector struct {
 	X, Y int
 }
 
+type Model struct {
+	width, height  int
+	state          State
+	image          *image.Image
+	imageBuf       string
+	asciiConverter *ascii.ImageConverter
+}
+
 func New(width, height int) Model {
 	converter := ascii.NewImageConverter()
 	model := Model{
@@ -24,29 +32,6 @@ func New(width, height int) Model {
 	}
 	model.Render()
 	return model
-}
-
-func (m Model) drawImage() image.Image {
-	i := image.NewRGBA(image.Rect(0, 0, m.width, m.height))
-	ctx := gg.NewContextForImage(i)
-	ctx.DrawCircle(float64(m.width/2), float64(m.height/2), 10)
-	ctx.SetColor(color.RGBA{0, 255, 0, 255})
-	ctx.Fill()
-	return ctx.Image()
-}
-
-func (m *Model) Render() {
-	i := m.drawImage()
-	asciiString := m.asciiConverter.Image2ASCIIString(i, &ascii.DefaultOptions)
-	m.imageBuf = asciiString
-}
-
-type Model struct {
-	width, height  int
-	state          State
-	image          *image.Image
-	imageBuf       string
-	asciiConverter *ascii.ImageConverter
 }
 
 func (m Model) Init() tea.Cmd {
@@ -115,4 +100,19 @@ func (m Model) Save() tea.Msg {
 	i := m.drawImage()
 	gg.SavePNG("out.png", i)
 	return nil
+}
+
+func (m Model) drawImage() image.Image {
+	i := image.NewRGBA(image.Rect(0, 0, m.width, m.height))
+	ctx := gg.NewContextForImage(i)
+	ctx.DrawCircle(float64(m.width/2), float64(m.height/2), 10)
+	ctx.SetColor(color.RGBA{0, 255, 0, 255})
+	ctx.Fill()
+	return ctx.Image()
+}
+
+func (m *Model) Render() {
+	i := m.drawImage()
+	asciiString := m.asciiConverter.Image2ASCIIString(i, &ascii.DefaultOptions)
+	m.imageBuf = asciiString
 }
