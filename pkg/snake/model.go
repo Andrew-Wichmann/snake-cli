@@ -26,7 +26,7 @@ func New(width, height int) Model {
 	return model
 }
 
-func (m Model) modelImage() image.Image {
+func (m Model) drawImage() image.Image {
 	i := image.NewRGBA(image.Rect(0, 0, m.width, m.height))
 	ctx := gg.NewContextForImage(i)
 	ctx.DrawCircle(float64(m.width/2), float64(m.height/2), 10)
@@ -36,7 +36,7 @@ func (m Model) modelImage() image.Image {
 }
 
 func (m *Model) Render() {
-	i := m.modelImage()
+	i := m.drawImage()
 	asciiString := m.asciiConverter.Image2ASCIIString(i, &ascii.DefaultOptions)
 	m.imageBuf = asciiString
 }
@@ -112,7 +112,7 @@ func (m Model) View() string {
 }
 
 func (m Model) Save() tea.Msg {
-	i := m.modelImage()
+	i := m.drawImage()
 	gg.SavePNG("out.png", i)
 	return nil
 }
