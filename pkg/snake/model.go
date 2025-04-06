@@ -1,9 +1,9 @@
 package snake
 
 import (
-	"errors"
 	"fmt"
 	"image"
+	"image/color"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fogleman/gg"
@@ -15,37 +15,38 @@ type Vector struct {
 }
 
 func New(width, height int) Model {
+	converter := ascii.NewImageConverter()
 	model := Model{
-		width:  width,
-		height: height,
+		width:          width,
+		height:         height,
+		asciiConverter: converter,
+		state:          RUNNING,
 	}
-	ctx := gg.NewContext(width, height)
-	model.image = ctx.Image()
-	model.pos = image.Point{model.image.Bounds().Max.X / 2, model.image.Bounds().Max.Y / 2}
-	model.velocity = Vector{1, 0}
 	model.Render()
-	model.state = RUNNING
 	return model
 }
 
-func (m *Model) Render() {
-	ctx := gg.NewContextForImage(m.image)
-	ctx.SetRGBA255(255, 0, 0, 255)
-	ctx.DrawCircle(float64(m.pos.X), float64(m.pos.Y), 1)
+func (m Model) modelImage() image.Image {
+	i := image.NewRGBA(image.Rect(0, 0, m.width, m.height))
+	ctx := gg.NewContextForImage(i)
+	ctx.DrawCircle(float64(m.width/2), float64(m.height/2), 10)
+	ctx.SetColor(color.RGBA{0, 255, 0, 255})
 	ctx.Fill()
-	m.image = ctx.Image()
-	converter := ascii.NewImageConverter()
-	asciiString := converter.Image2ASCIIString(m.image, &ascii.DefaultOptions)
+	return ctx.Image()
+}
+
+func (m *Model) Render() {
+	i := m.modelImage()
+	asciiString := m.asciiConverter.Image2ASCIIString(i, &ascii.DefaultOptions)
 	m.imageBuf = asciiString
 }
 
 type Model struct {
-	width, height int
-	state         State
-	image         image.Image
-	imageBuf      string
-	pos           image.Point
-	velocity      Vector
+	width, height  int
+	state          State
+	image          *image.Image
+	imageBuf       string
+	asciiConverter *ascii.ImageConverter
 }
 
 func (m Model) Init() tea.Cmd {
@@ -74,25 +75,25 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, nil
 		}
 	}
-	if direction, ok := msg.(Direction); ok {
-		if direction == UP {
-			m.velocity = Vector{0, -1}
-		} else if direction == DOWN {
-			m.velocity = Vector{0, 1}
-		} else if direction == LEFT {
-			m.velocity = Vector{-1, 0}
-		} else if direction == RIGHT {
-			m.velocity = Vector{1, 0}
-		} else {
-			panic(errors.New(fmt.Sprintf("Unknown direction %d", direction)))
-		}
-		m.Render()
-		return m, nil
-	}
+	//if direction, ok := msg.(Direction); ok {
+	//	if direction == UP {
+	//		m.velocity = Vector{0, -1}
+	//	} else if direction == DOWN {
+	//		m.velocity = Vector{0, 1}
+	//	} else if direction == LEFT {
+	//		m.velocity = Vector{-1, 0}
+	//	} else if direction == RIGHT {
+	//		m.velocity = Vector{1, 0}
+	//	} else {
+	//		panic(errors.New(fmt.Sprintf("Unknown direction %d", direction)))
+	//	}
+	//	m.Render()
+	//	return m, nil
+	//}
 	if _, ok := msg.(tickMsg); ok {
 		if m.state == RUNNING {
-			m.pos.X += m.velocity.X
-			m.pos.Y += m.velocity.Y
+			//m.pos.X += m.velocity.X
+			//m.pos.Y += m.velocity.Y
 			m.Render()
 		}
 		return m, doTick()
@@ -111,6 +112,7 @@ func (m Model) View() string {
 }
 
 func (m Model) Save() tea.Msg {
-	gg.SavePNG("out.png", m.image)
+	i := m.modelImage()
+	gg.SavePNG("out.png", i)
 	return nil
 }
