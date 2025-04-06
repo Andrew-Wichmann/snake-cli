@@ -61,8 +61,13 @@ func (a app) View() string {
 }
 
 func main() {
+	f, err := tea.LogToFile("debug.log", "snake-cli")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
 	prog := tea.NewProgram(app{})
-	_, err := prog.Run()
+	_, err = prog.Run()
 	if err != nil {
 		panic(err)
 	}
