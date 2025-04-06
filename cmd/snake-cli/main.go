@@ -93,6 +93,11 @@ func RightCmd() tea.Msg {
 	return RIGHT
 }
 
+func (a app) Save() tea.Msg {
+	gg.SavePNG("out.png", a.image)
+	return nil
+}
+
 func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if windowSizeMsg, ok := msg.(tea.WindowSizeMsg); ok {
 		height = windowSizeMsg.Height
@@ -113,6 +118,8 @@ func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, RightCmd
 		case "h":
 			return a, LeftCmd
+		case "ctrl+p":
+			return a, a.Save
 		case "p":
 			if a.state == PAUSED {
 				a.state = RUNNING
