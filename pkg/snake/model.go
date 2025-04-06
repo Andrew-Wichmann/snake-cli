@@ -101,9 +101,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	if m.state == INIT {
-		return "Starting"
-	} else if m.state == RUNNING {
+	if m.state == RUNNING {
 		return m.imageBuf
 	} else if m.state == PAUSED {
 		return "Paused"
