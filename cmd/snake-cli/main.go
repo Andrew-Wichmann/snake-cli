@@ -4,18 +4,25 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fogleman/gg"
 	ascii "github.com/qeesung/image2ascii/convert"
 )
 
+type Vector struct {
+	X, Y int
+}
+
 func NewGame() app {
 	var a app
 	ctx := gg.NewContext(width, height*2) // Not sure why I have to double the height...
 	a.image = ctx.Image()
 	a.pos = image.Point{a.image.Bounds().Max.X / 2, a.image.Bounds().Max.Y / 2}
+	a.velocity = Vector{1, 0}
 	a.Render()
+	a.state = RUNNING
 	return a
 }
 
@@ -46,10 +53,19 @@ type app struct {
 	image    image.Image
 	imageBuf string
 	pos      image.Point
+	velocity Vector
+}
+
+type tickMsg time.Time
+
+func doTick() tea.Cmd {
+	return tea.Tick(time.Millisecond*50, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
 }
 
 func (a app) Init() tea.Cmd {
-	return nil
+	return doTick()
 }
 
 type Direction int
@@ -97,6 +113,13 @@ func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, RightCmd
 		case "h":
 			return a, LeftCmd
+		case "p":
+			if a.state == PAUSED {
+				a.state = RUNNING
+			} else {
+				a.state = PAUSED
+			}
+			return a, nil
 		case "n":
 			app := NewGame()
 			return app, nil
@@ -104,23 +127,40 @@ func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	if direction, ok := msg.(Direction); ok {
 		if direction == UP {
-			a.pos.Y += -1
+			a.velocity = Vector{0, -1}
 		} else if direction == DOWN {
-			a.pos.Y += 1
+			a.velocity = Vector{0, 1}
 		} else if direction == LEFT {
-			a.pos.X += -1
+			a.velocity = Vector{-1, 0}
 		} else if direction == RIGHT {
-			a.pos.X += 1
+			a.velocity = Vector{1, 0}
 		} else {
 			panic(errors.New(fmt.Sprintf("Unknown direction %d", direction)))
 		}
 		a.Render()
+		return a, nil
+	}
+	if _, ok := msg.(tickMsg); ok {
+		if a.state == RUNNING {
+			a.pos.X += a.velocity.X
+			a.pos.Y += a.velocity.Y
+			a.Render()
+		}
+		return a, doTick()
 	}
 	return a, nil
 }
 
 func (a app) View() string {
-	return a.imageBuf
+	if a.state == INIT {
+		return "Starting"
+	} else if a.state == RUNNING {
+		return a.imageBuf
+	} else if a.state == PAUSED {
+		return "Paused"
+	} else {
+		panic(fmt.Sprintf("Unknown state %d", a.state))
+	}
 }
 
 func main() {
