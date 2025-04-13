@@ -101,7 +101,7 @@ func (m Model) Save() tea.Msg {
 func (m Model) drawImage() image.Image {
 	i := image.NewRGBA(image.Rect(0, 0, m.width, m.height))
 	ctx := gg.NewContextForImage(i)
-	ctx.SetColor(color.RGBA{0, 255, 0, 255})
+	ctx.SetColor(color.RGBA{255, 0, 0, 255})
 	for _, segment := range m.body.segments {
 		minx := min(segment.start.x, segment.end.x)
 		miny := min(segment.start.y, segment.end.y)
